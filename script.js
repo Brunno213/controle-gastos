@@ -1,7 +1,8 @@
-// ======== CONFIGURAÇÃO FIREBASE ========
+// Importações Firebase
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
+// Configuração Firebase (sua)
 const firebaseConfig = {
   apiKey: "AIzaSyBRuvYrZLMLRdV5ckKT-0r-hXsgO7umKDE",
   authDomain: "controle-estoque-b3040.firebaseapp.com",
@@ -16,93 +17,120 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// ======== FORMULÁRIO E AÇÕES ========
-const form = document.getElementById("formLancamento");
-const tabela = document.getElementById("tabelaLancamentos");
-const controleTabela = document.getElementById("tabelaControle");
+// Função para formatar número para Real
+function formatarValor(valor) {
+  return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
 
-const dataInput = document.getElementById("data");
-const mesInput = document.getElementById("mes");
-
-dataInput.addEventListener("change", () => {
-  const data = new Date(dataInput.value);
-  const mes = data.toLocaleString('pt-BR', { month: 'long' });
-  mesInput.value = mes.charAt(0).toUpperCase() + mes.slice(1);
+// Atualiza automaticamente o campo "mês" ao escolher a data
+document.getElementById("data").addEventListener("change", (e) => {
+  const data = new Date(e.target.value);
+  const mes = data.toLocaleString("pt-BR", { month: "long", year: "numeric" });
+  document.getElementById("mes").value = mes.charAt(0).toUpperCase() + mes.slice(1);
 });
 
-form.addEventListener("submit", async (e) => {
+// Salvar lançamento
+document.getElementById("formLancamento").addEventListener("submit", async (e) => {
   e.preventDefault();
-  const data = dataInput.value;
-  const mes = mesInput.value;
+
+  const data = document.getElementById("data").value;
+  const mes = document.getElementById("mes").value;
   const categoria = document.getElementById("categoria").value;
   const descricao = document.getElementById("descricao").value;
   const valor = parseFloat(document.getElementById("valor").value);
 
   try {
-    await addDoc(collection(db, "lancamentos"), { data, mes, categoria, descricao, valor });
+    await addDoc(collection(db, "lancamentos"), {
+      data,
+      mes,
+      categoria,
+      descricao,
+      valor,
+      timestamp: new Date()
+    });
+
     alert("Lançamento salvo com sucesso!");
-    form.reset();
+    document.getElementById("formLancamento").reset();
+    document.getElementById("mes").value = "";
     carregarLancamentos();
+    carregarControle();
   } catch (error) {
     console.error("Erro ao salvar:", error);
+    alert("Erro ao salvar o lançamento.");
   }
 });
 
-// ======== CARREGAR LANÇAMENTOS ========
+// Carregar lançamentos do Firestore
 async function carregarLancamentos() {
+  const tabela = document.getElementById("tabelaLancamentos");
   tabela.innerHTML = "";
-  const querySnapshot = await getDocs(collection(db, "lancamentos"));
-
-  const controle = {};
+  const q = query(collection(db, "lancamentos"), orderBy("timestamp", "desc"));
+  const querySnapshot = await getDocs(q);
 
   querySnapshot.forEach((doc) => {
-    const item = doc.data();
-
-    // tabela extrato
-    const linha = document.createElement("tr");
-    linha.innerHTML = `
-      <td>${item.data}</td>
-      <td>${item.mes}</td>
-      <td>${item.categoria}</td>
-      <td>${item.descricao}</td>
-      <td>${item.valor.toFixed(2)}</td>
+    const lanc = doc.data();
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${new Date(lanc.data).toLocaleDateString("pt-BR")}</td>
+      <td>${lanc.mes}</td>
+      <td>${lanc.categoria}</td>
+      <td>${lanc.descricao}</td>
+      <td>${formatarValor(lanc.valor)}</td>
     `;
-    tabela.appendChild(linha);
-
-    // controle mensal
-    if (!controle[item.mes]) {
-      controle[item.mes] = { renda: 0, gasto: 0 };
-    }
-
-    if (["Salário", "Renda Extra"].includes(item.categoria)) {
-      controle[item.mes].renda += item.valor;
-    } else {
-      controle[item.mes].gasto += item.valor;
-    }
+    tabela.appendChild(tr);
   });
-
-  controleTabela.innerHTML = "";
-  for (const mes in controle) {
-    const linha = document.createElement("tr");
-    linha.innerHTML = `
-      <td>${mes}</td>
-      <td>R$ ${controle[mes].renda.toFixed(2)}</td>
-      <td>R$ ${controle[mes].gasto.toFixed(2)}</td>
-    `;
-    controleTabela.appendChild(linha);
-  }
 }
 
-// Alternar entre menus
-document.getElementById("menuExtrato").addEventListener("click", () => {
-  document.getElementById("extratoSection").style.display = "block";
-  document.getElementById("controleSection").style.display = "none";
-});
-document.getElementById("menuControle").addEventListener("click", () => {
-  document.getElementById("extratoSection").style.display = "none";
-  document.getElementById("controleSection").style.display = "block";
-  carregarLancamentos();
-});
+// Carregar controle mensal
+async function carregarControle() {
+  const controle = {};
+  const querySnapshot = await getDocs(collection(db, "lancamentos"));
 
-// Carrega ao abrir
+  querySnapshot.forEach((doc) => {
+    const lanc = doc.data();
+    const mes = lanc.mes;
+    if (!controle[mes]) controle[mes] = { renda: 0, gasto: 0, categorias: {} };
+
+    const isRenda = ["Salário", "Renda Extra"].includes(lanc.categoria);
+    if (isRenda) {
+      controle[mes].renda += lanc.valor;
+    } else {
+      controle[mes].gasto += lanc.valor;
+    }
+
+    // Contar frequência de categorias
+    if (!controle[mes].categorias[lanc.categoria])
+      controle[mes].categorias[lanc.categoria] = 0;
+    controle[mes].categorias[lanc.categoria]++;
+  });
+
+  const tabela = document.getElementById("tabelaControle");
+  tabela.innerHTML = "";
+
+  Object.entries(controle).forEach(([mes, valores]) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${mes}</td>
+      <td>${formatarValor(valores.renda)}</td>
+      <td>${formatarValor(valores.gasto)}</td>
+    `;
+    tabela.appendChild(tr);
+
+    // Categoria mais frequente
+    const categorias = Object.entries(valores.categorias);
+    if (categorias.length > 0) {
+      const [categoriaMais, qtd] = categorias.sort((a, b) => b[1] - a[1])[0];
+      const freqInfo = document.createElement("tr");
+      freqInfo.innerHTML = `
+        <td colspan="3" class="text-muted small text-center">
+          Categoria mais frequente: <b>${categoriaMais}</b> (${qtd}x)
+        </td>
+      `;
+      tabela.appendChild(freqInfo);
+    }
+  });
+}
+
+// Inicialização
 carregarLancamentos();
+carregarControle();
