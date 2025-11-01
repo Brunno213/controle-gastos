@@ -13,18 +13,15 @@
     <div class="container">
       <a class="navbar-brand fw-bold" href="#">Controle Financeiro</a>
       <ul class="navbar-nav ms-auto">
-        <li class="nav-item">
-          <a class="nav-link active" href="#" id="menuExtrato" data-section="extratoSection">Extrato</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="#" id="menuControle" data-section="controleSection">Controle</a>
-        </li>
+        <li class="nav-item"><a class="nav-link active" href="#" id="menuExtrato">Extrato</a></li>
+        <li class="nav-item"><a class="nav-link" href="#" id="menuRegistros">Registros</a></li>
+        <li class="nav-item"><a class="nav-link" href="#" id="menuControle">Controle</a></li>
       </ul>
     </div>
   </nav>
 
-  <!-- Seção Extrato -->
-  <div class="container my-5 section" id="extratoSection">
+  <!-- Extrato -->
+  <div class="container my-5" id="extratoSection">
     <h2 class="text-center mb-4">Adicionar Lançamento</h2>
     <form id="formLancamento" class="p-4 shadow rounded bg-white mx-auto" style="max-width: 500px;">
       <div class="mb-3">
@@ -61,26 +58,29 @@
         <button type="submit" class="btn btn-success">Salvar</button>
       </div>
     </form>
-
-    <hr class="my-5">
-
-    <h4 class="text-center mb-3">Lançamentos</h4>
-    <table class="table table-striped">
-      <thead>
-        <tr>
-          <th>Data</th>
-          <th>Mês</th>
-          <th>Categoria</th>
-          <th>Descrição</th>
-          <th>Valor (R$)</th>
-        </tr>
-      </thead>
-      <tbody id="tabelaLancamentos"></tbody>
-    </table>
   </div>
 
-  <!-- Seção Controle -->
-  <div class="container my-5 section" id="controleSection" style="display:none;">
+  <!-- Registros -->
+  <div class="container my-5" id="registrosSection" style="display:none;">
+    <h2 class="text-center mb-4">Registros de Lançamentos</h2>
+    <div class="table-responsive">
+      <table class="table table-striped">
+        <thead class="table-success">
+          <tr>
+            <th>Data</th>
+            <th>Mês</th>
+            <th>Categoria</th>
+            <th>Descrição</th>
+            <th>Valor (R$)</th>
+          </tr>
+        </thead>
+        <tbody id="tabelaLancamentos"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Controle -->
+  <div class="container my-5" id="controleSection" style="display:none;">
     <h2 class="text-center mb-4">Controle Mensal</h2>
     <div class="table-responsive">
       <table class="table table-bordered">
@@ -96,33 +96,6 @@
     </div>
   </div>
 
-  <!-- Firebase e script -->
   <script type="module" src="script.js"></script>
-
-  <!-- Script que faz o menu alternar -->
-  <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      const menuLinks = document.querySelectorAll(".navbar-nav .nav-link");
-      const sections = document.querySelectorAll(".section");
-
-      menuLinks.forEach(link => {
-        link.addEventListener("click", (e) => {
-          e.preventDefault();
-
-          // Remove active de todos os links
-          menuLinks.forEach(l => l.classList.remove("active"));
-          link.classList.add("active");
-
-          // Esconde todas as seções
-          sections.forEach(sec => sec.style.display = "none");
-
-          // Mostra a seção correspondente
-          const sectionId = link.getAttribute("data-section");
-          document.getElementById(sectionId).style.display = "block";
-        });
-      });
-    });
-  </script>
-
 </body>
 </html>
