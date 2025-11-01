@@ -1,8 +1,6 @@
-// Importações Firebase
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
 import { getFirestore, collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-// Configuração Firebase (sua)
 const firebaseConfig = {
   apiKey: "AIzaSyBRuvYrZLMLRdV5ckKT-0r-hXsgO7umKDE",
   authDomain: "controle-estoque-b3040.firebaseapp.com",
@@ -13,23 +11,54 @@ const firebaseConfig = {
   measurementId: "G-TWDYX1DND1"
 };
 
-// Inicializa Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// Função para formatar número para Real
-function formatarValor(valor) {
-  return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+// Menu Navigation
+const menuExtrato = document.getElementById("menuExtrato");
+const menuRegistros = document.getElementById("menuRegistros");
+const menuControle = document.getElementById("menuControle");
+
+const extratoSection = document.getElementById("extratoSection");
+const registrosSection = document.getElementById("registrosSection");
+const controleSection = document.getElementById("controleSection");
+
+function mostrarSecao(secao) {
+  extratoSection.style.display = "none";
+  registrosSection.style.display = "none";
+  controleSection.style.display = "none";
+
+  secao.style.display = "block";
+
+  [menuExtrato, menuRegistros, menuControle].forEach(btn => btn.classList.remove("active"));
+  if (secao === extratoSection) menuExtrato.classList.add("active");
+  if (secao === registrosSection) menuRegistros.classList.add("active");
+  if (secao === controleSection) menuControle.classList.add("active");
 }
 
-// Atualiza automaticamente o campo "mês" ao escolher a data
+menuExtrato.addEventListener("click", () => mostrarSecao(extratoSection));
+menuRegistros.addEventListener("click", () => {
+  mostrarSecao(registrosSection);
+  carregarLancamentos();
+});
+menuControle.addEventListener("click", () => {
+  mostrarSecao(controleSection);
+  carregarControle();
+});
+
+// Atualiza automaticamente o mês
 document.getElementById("data").addEventListener("change", (e) => {
   const data = new Date(e.target.value);
   const mes = data.toLocaleString("pt-BR", { month: "long", year: "numeric" });
   document.getElementById("mes").value = mes.charAt(0).toUpperCase() + mes.slice(1);
 });
 
-// Salvar lançamento
+// Formatação de valor
+function formatarValor(valor) {
+  return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+// Adicionar lançamento
 document.getElementById("formLancamento").addEventListener("submit", async (e) => {
   e.preventDefault();
 
@@ -39,28 +68,16 @@ document.getElementById("formLancamento").addEventListener("submit", async (e) =
   const descricao = document.getElementById("descricao").value;
   const valor = parseFloat(document.getElementById("valor").value);
 
-  try {
-    await addDoc(collection(db, "lancamentos"), {
-      data,
-      mes,
-      categoria,
-      descricao,
-      valor,
-      timestamp: new Date()
-    });
+  await addDoc(collection(db, "lancamentos"), {
+    data, mes, categoria, descricao, valor, timestamp: new Date()
+  });
 
-    alert("Lançamento salvo com sucesso!");
-    document.getElementById("formLancamento").reset();
-    document.getElementById("mes").value = "";
-    carregarLancamentos();
-    carregarControle();
-  } catch (error) {
-    console.error("Erro ao salvar:", error);
-    alert("Erro ao salvar o lançamento.");
-  }
+  alert("Lançamento salvo com sucesso!");
+  document.getElementById("formLancamento").reset();
+  document.getElementById("mes").value = "";
 });
 
-// Carregar lançamentos do Firestore
+// Carregar lançamentos
 async function carregarLancamentos() {
   const tabela = document.getElementById("tabelaLancamentos");
   tabela.innerHTML = "";
@@ -92,13 +109,9 @@ async function carregarControle() {
     if (!controle[mes]) controle[mes] = { renda: 0, gasto: 0, categorias: {} };
 
     const isRenda = ["Salário", "Renda Extra"].includes(lanc.categoria);
-    if (isRenda) {
-      controle[mes].renda += lanc.valor;
-    } else {
-      controle[mes].gasto += lanc.valor;
-    }
+    if (isRenda) controle[mes].renda += lanc.valor;
+    else controle[mes].gasto += lanc.valor;
 
-    // Contar frequência de categorias
     if (!controle[mes].categorias[lanc.categoria])
       controle[mes].categorias[lanc.categoria] = 0;
     controle[mes].categorias[lanc.categoria]++;
@@ -116,7 +129,6 @@ async function carregarControle() {
     `;
     tabela.appendChild(tr);
 
-    // Categoria mais frequente
     const categorias = Object.entries(valores.categorias);
     if (categorias.length > 0) {
       const [categoriaMais, qtd] = categorias.sort((a, b) => b[1] - a[1])[0];
@@ -130,7 +142,3 @@ async function carregarControle() {
     }
   });
 }
-
-// Inicialização
-carregarLancamentos();
-carregarControle();
