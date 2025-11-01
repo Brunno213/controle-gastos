@@ -216,3 +216,28 @@ body.dark .table {
 .progress {
   height: 1rem;
 }
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background-color: #ffffff;
+  color: #333;
+}
+
+.navbar {
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+form label {
+  font-weight: 600;
+}
+
+table {
+  background-color: #fff;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.table th {
+  background-color: #198754;
+  color: white;
+}
+
