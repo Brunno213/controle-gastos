@@ -1,15 +1,7 @@
-// ======== IMPORTS DO FIREBASE ========
-import { 
-  initializeApp 
-} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-import { 
-  getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc 
-} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
-import { 
-  getAuth, GoogleAuthProvider, signInWithPopup, signOut 
-} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+// ======== CONFIGURAÇÃO FIREBASE ========
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-// ======== CONFIGURAÇÃO DO FIREBASE ========
 const firebaseConfig = {
   apiKey: "AIzaSyBRuvYrZLMLRdV5ckKT-0r-hXsgO7umKDE",
   authDomain: "controle-estoque-b3040.firebaseapp.com",
@@ -20,161 +12,97 @@ const firebaseConfig = {
   measurementId: "G-TWDYX1DND1"
 };
 
-// ======== INICIALIZAÇÃO ========
+// Inicializa Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const auth = getAuth(app);
-const provider = new GoogleAuthProvider();
 
-let usuarioLogado = null;
-let lancamentos = [];
-let editIndex = null;
+// ======== FORMULÁRIO E AÇÕES ========
+const form = document.getElementById("formLancamento");
+const tabela = document.getElementById("tabelaLancamentos");
+const controleTabela = document.getElementById("tabelaControle");
 
-// ======== LOGIN GOOGLE ========
-document.getElementById("btnLogin").addEventListener("click", async () => {
-  try {
-    const result = await signInWithPopup(auth, provider);
-    usuarioLogado = result.user;
-    document.getElementById("userName").innerText = usuarioLogado.displayName;
-    document.getElementById("btnLogin").style.display = "none";
-    document.getElementById("btnLogout").style.display = "inline-block";
-    await carregarLancamentos();
-  } catch (e) {
-    alert("Erro ao fazer login: " + e.message);
-  }
+const dataInput = document.getElementById("data");
+const mesInput = document.getElementById("mes");
+
+dataInput.addEventListener("change", () => {
+  const data = new Date(dataInput.value);
+  const mes = data.toLocaleString('pt-BR', { month: 'long' });
+  mesInput.value = mes.charAt(0).toUpperCase() + mes.slice(1);
 });
 
-document.getElementById("btnLogout").addEventListener("click", async () => {
-  await signOut(auth);
-  usuarioLogado = null;
-  document.getElementById("userName").innerText = "";
-  document.getElementById("btnLogin").style.display = "inline-block";
-  document.getElementById("btnLogout").style.display = "none";
-  document.getElementById("tabelaBody").innerHTML = "";
-});
-
-// ======== FIRESTORE ========
-async function carregarLancamentos() {
-  if (!usuarioLogado) return;
-  lancamentos = [];
-  const querySnapshot = await getDocs(collection(db, `usuarios/${usuarioLogado.uid}/lancamentos`));
-  querySnapshot.forEach((docSnap) => {
-    lancamentos.push({ id: docSnap.id, ...docSnap.data() });
-  });
-  atualizarTabela();
-  atualizarControle();
-}
-
-async function salvarLancamento(lancamento) {
-  if (!usuarioLogado) return;
-  await addDoc(collection(db, `usuarios/${usuarioLogado.uid}/lancamentos`), lancamento);
-  await carregarLancamentos();
-}
-
-async function atualizarLancamento(id, dados) {
-  await updateDoc(doc(db, `usuarios/${usuarioLogado.uid}/lancamentos`, id), dados);
-  await carregarLancamentos();
-}
-
-async function excluirLancamento(id) {
-  await deleteDoc(doc(db, `usuarios/${usuarioLogado.uid}/lancamentos`, id));
-  await carregarLancamentos();
-}
-
-// ======== FORMULÁRIO ========
-document.getElementById("data").addEventListener("change", (e) => {
-  const data = new Date(e.target.value);
-  if (!isNaN(data)) {
-    const meses = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
-    document.getElementById("mes").value = meses[data.getMonth()];
-  }
-});
-
-document.getElementById("formLancamento").addEventListener("submit", async (e) => {
+form.addEventListener("submit", async (e) => {
   e.preventDefault();
-  if (!usuarioLogado) {
-    alert("Por favor, faça login antes de salvar.");
-    return;
-  }
-
-  const data = document.getElementById("data").value;
-  const mes = document.getElementById("mes").value;
+  const data = dataInput.value;
+  const mes = mesInput.value;
   const categoria = document.getElementById("categoria").value;
   const descricao = document.getElementById("descricao").value;
   const valor = parseFloat(document.getElementById("valor").value);
 
-  const novo = { data, mes, categoria, descricao, valor };
-
-  if (editIndex === null) {
-    await salvarLancamento(novo);
-  } else {
-    await atualizarLancamento(lancamentos[editIndex].id, novo);
-    editIndex = null;
+  try {
+    await addDoc(collection(db, "lancamentos"), { data, mes, categoria, descricao, valor });
+    alert("Lançamento salvo com sucesso!");
+    form.reset();
+    carregarLancamentos();
+  } catch (error) {
+    console.error("Erro ao salvar:", error);
   }
-
-  e.target.reset();
 });
 
-// ======== TABELA ========
-function atualizarTabela() {
-  const corpo = document.getElementById("tabelaBody");
-  corpo.innerHTML = "";
-  lancamentos.forEach((l, i) => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${l.data}</td>
-      <td>${l.mes}</td>
-      <td>${l.categoria}</td>
-      <td>${l.descricao}</td>
-      <td>R$ ${l.valor.toFixed(2)}</td>
-      <td>
-        <button class="btn btn-warning btn-sm" onclick="editar(${i})">Editar</button>
-        <button class="btn btn-danger btn-sm" onclick="excluir(${i})">Excluir</button>
-      </td>
+// ======== CARREGAR LANÇAMENTOS ========
+async function carregarLancamentos() {
+  tabela.innerHTML = "";
+  const querySnapshot = await getDocs(collection(db, "lancamentos"));
+
+  const controle = {};
+
+  querySnapshot.forEach((doc) => {
+    const item = doc.data();
+
+    // tabela extrato
+    const linha = document.createElement("tr");
+    linha.innerHTML = `
+      <td>${item.data}</td>
+      <td>${item.mes}</td>
+      <td>${item.categoria}</td>
+      <td>${item.descricao}</td>
+      <td>${item.valor.toFixed(2)}</td>
     `;
-    corpo.appendChild(tr);
-  });
-  atualizarControle();
-}
+    tabela.appendChild(linha);
 
-window.editar = function(i) {
-  const l = lancamentos[i];
-  document.getElementById("data").value = l.data;
-  document.getElementById("mes").value = l.mes;
-  document.getElementById("categoria").value = l.categoria;
-  document.getElementById("descricao").value = l.descricao;
-  document.getElementById("valor").value = l.valor;
-  editIndex = i;
-};
+    // controle mensal
+    if (!controle[item.mes]) {
+      controle[item.mes] = { renda: 0, gasto: 0 };
+    }
 
-window.excluir = async function(i) {
-  if (confirm("Deseja excluir este lançamento?")) {
-    await excluirLancamento(lancamentos[i].id);
-  }
-};
-
-// ======== CONTROLE (COMPARATIVO DE RENDAS E GASTOS) ========
-function atualizarControle() {
-  const meses = {};
-  lancamentos.forEach(l => {
-    if (!meses[l.mes]) meses[l.mes] = { renda: 0, gasto: 0 };
-    if (["salario", "renda extra", "dízimo"].includes(l.categoria.toLowerCase())) {
-      meses[l.mes].renda += l.valor;
+    if (["Salário", "Renda Extra"].includes(item.categoria)) {
+      controle[item.mes].renda += item.valor;
     } else {
-      meses[l.mes].gasto += l.valor;
+      controle[item.mes].gasto += item.valor;
     }
   });
 
-  const tabela = document.getElementById("controleBody");
-  tabela.innerHTML = "";
-  for (const mes in meses) {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
+  controleTabela.innerHTML = "";
+  for (const mes in controle) {
+    const linha = document.createElement("tr");
+    linha.innerHTML = `
       <td>${mes}</td>
-      <td>R$ ${meses[mes].renda.toFixed(2)}</td>
-      <td>R$ ${meses[mes].gasto.toFixed(2)}</td>
+      <td>R$ ${controle[mes].renda.toFixed(2)}</td>
+      <td>R$ ${controle[mes].gasto.toFixed(2)}</td>
     `;
-    tabela.appendChild(tr);
+    controleTabela.appendChild(linha);
   }
 }
 
+// Alternar entre menus
+document.getElementById("menuExtrato").addEventListener("click", () => {
+  document.getElementById("extratoSection").style.display = "block";
+  document.getElementById("controleSection").style.display = "none";
+});
+document.getElementById("menuControle").addEventListener("click", () => {
+  document.getElementById("extratoSection").style.display = "none";
+  document.getElementById("controleSection").style.display = "block";
+  carregarLancamentos();
+});
+
+// Carrega ao abrir
+carregarLancamentos();
