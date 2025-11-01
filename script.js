@@ -1,12 +1,15 @@
-// ======== IMPORTS FIREBASE ========
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+// ======== IMPORTS DO FIREBASE ========
+import { 
+  initializeApp 
+} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+import { 
+  getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc 
+} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+import { 
+  getAuth, GoogleAuthProvider, signInWithPopup, signOut 
+} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+// ======== CONFIGURAÇÃO DO FIREBASE ========
 const firebaseConfig = {
   apiKey: "AIzaSyBRuvYrZLMLRdV5ckKT-0r-hXsgO7umKDE",
   authDomain: "controle-estoque-b3040.firebaseapp.com",
@@ -17,71 +20,64 @@ const firebaseConfig = {
   measurementId: "G-TWDYX1DND1"
 };
 
-// Initialize Firebase
+// ======== INICIALIZAÇÃO ========
 const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
-// ======== VARIÁVEIS ========
-let user = null;
+const db = getFirestore(app);
+const auth = getAuth(app);
+const provider = new GoogleAuthProvider();
+
+let usuarioLogado = null;
 let lancamentos = [];
 let editIndex = null;
 
-// ======== LOGIN/LOGOUT ========
-const btnLogin = document.getElementById("btnLogin");
-const btnLogout = document.getElementById("btnLogout");
-const userInfo = document.getElementById("userInfo");
-
-btnLogin.addEventListener("click", async () => {
+// ======== LOGIN GOOGLE ========
+document.getElementById("btnLogin").addEventListener("click", async () => {
   try {
-    await signInWithPopup(auth, provider);
-  } catch (e) {
-    alert("Erro ao entrar: " + e.message);
-  }
-});
-
-btnLogout.addEventListener("click", async () => {
-  await signOut(auth);
-});
-
-onAuthStateChanged(auth, async (usuario) => {
-  if (usuario) {
-    user = usuario;
-    userInfo.textContent = `Olá, ${user.displayName}!`;
-    btnLogin.classList.add("d-none");
-    btnLogout.classList.remove("d-none");
+    const result = await signInWithPopup(auth, provider);
+    usuarioLogado = result.user;
+    document.getElementById("userName").innerText = usuarioLogado.displayName;
+    document.getElementById("btnLogin").style.display = "none";
+    document.getElementById("btnLogout").style.display = "inline-block";
     await carregarLancamentos();
-  } else {
-    user = null;
-    lancamentos = [];
-    userInfo.textContent = "";
-    btnLogin.classList.remove("d-none");
-    btnLogout.classList.add("d-none");
-    document.querySelector("#tabelaRegistros tbody").innerHTML = "";
-    document.getElementById("tabelaControle").innerHTML = "";
+  } catch (e) {
+    alert("Erro ao fazer login: " + e.message);
   }
+});
+
+document.getElementById("btnLogout").addEventListener("click", async () => {
+  await signOut(auth);
+  usuarioLogado = null;
+  document.getElementById("userName").innerText = "";
+  document.getElementById("btnLogin").style.display = "inline-block";
+  document.getElementById("btnLogout").style.display = "none";
+  document.getElementById("tabelaBody").innerHTML = "";
 });
 
 // ======== FIRESTORE ========
 async function carregarLancamentos() {
+  if (!usuarioLogado) return;
   lancamentos = [];
-  const q = query(collection(db, "lancamentos"), where("uid", "==", user.uid));
-  const snapshot = await getDocs(q);
-  snapshot.forEach(docSnap => lancamentos.push({ id: docSnap.id, ...docSnap.data() }));
+  const querySnapshot = await getDocs(collection(db, `usuarios/${usuarioLogado.uid}/lancamentos`));
+  querySnapshot.forEach((docSnap) => {
+    lancamentos.push({ id: docSnap.id, ...docSnap.data() });
+  });
   atualizarTabela();
   atualizarControle();
 }
 
-async function salvarLancamento(dados) {
-  await addDoc(collection(db, "lancamentos"), { ...dados, uid: user.uid });
+async function salvarLancamento(lancamento) {
+  if (!usuarioLogado) return;
+  await addDoc(collection(db, `usuarios/${usuarioLogado.uid}/lancamentos`), lancamento);
   await carregarLancamentos();
 }
 
 async function atualizarLancamento(id, dados) {
-  await updateDoc(doc(db, "lancamentos", id), dados);
+  await updateDoc(doc(db, `usuarios/${usuarioLogado.uid}/lancamentos`, id), dados);
   await carregarLancamentos();
 }
 
 async function excluirLancamento(id) {
-  await deleteDoc(doc(db, "lancamentos", id));
+  await deleteDoc(doc(db, `usuarios/${usuarioLogado.uid}/lancamentos`, id));
   await carregarLancamentos();
 }
 
@@ -96,10 +92,11 @@ document.getElementById("data").addEventListener("change", (e) => {
 
 document.getElementById("formLancamento").addEventListener("submit", async (e) => {
   e.preventDefault();
-  if (!user) {
-    alert("Faça login primeiro!");
+  if (!usuarioLogado) {
+    alert("Por favor, faça login antes de salvar.");
     return;
   }
+
   const data = document.getElementById("data").value;
   const mes = document.getElementById("mes").value;
   const categoria = document.getElementById("categoria").value;
@@ -118,7 +115,66 @@ document.getElementById("formLancamento").addEventListener("submit", async (e) =
   e.target.reset();
 });
 
-// ======== EXIBIÇÃO ========
-// Use as funções atualizarTabela() e atualizarControle() do código anterior
-// Elas funcionam sem mudanças, pois os dados já vêm do Firestore.
+// ======== TABELA ========
+function atualizarTabela() {
+  const corpo = document.getElementById("tabelaBody");
+  corpo.innerHTML = "";
+  lancamentos.forEach((l, i) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${l.data}</td>
+      <td>${l.mes}</td>
+      <td>${l.categoria}</td>
+      <td>${l.descricao}</td>
+      <td>R$ ${l.valor.toFixed(2)}</td>
+      <td>
+        <button class="btn btn-warning btn-sm" onclick="editar(${i})">Editar</button>
+        <button class="btn btn-danger btn-sm" onclick="excluir(${i})">Excluir</button>
+      </td>
+    `;
+    corpo.appendChild(tr);
+  });
+  atualizarControle();
+}
+
+window.editar = function(i) {
+  const l = lancamentos[i];
+  document.getElementById("data").value = l.data;
+  document.getElementById("mes").value = l.mes;
+  document.getElementById("categoria").value = l.categoria;
+  document.getElementById("descricao").value = l.descricao;
+  document.getElementById("valor").value = l.valor;
+  editIndex = i;
+};
+
+window.excluir = async function(i) {
+  if (confirm("Deseja excluir este lançamento?")) {
+    await excluirLancamento(lancamentos[i].id);
+  }
+};
+
+// ======== CONTROLE (COMPARATIVO DE RENDAS E GASTOS) ========
+function atualizarControle() {
+  const meses = {};
+  lancamentos.forEach(l => {
+    if (!meses[l.mes]) meses[l.mes] = { renda: 0, gasto: 0 };
+    if (["salario", "renda extra", "dízimo"].includes(l.categoria.toLowerCase())) {
+      meses[l.mes].renda += l.valor;
+    } else {
+      meses[l.mes].gasto += l.valor;
+    }
+  });
+
+  const tabela = document.getElementById("controleBody");
+  tabela.innerHTML = "";
+  for (const mes in meses) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${mes}</td>
+      <td>R$ ${meses[mes].renda.toFixed(2)}</td>
+      <td>R$ ${meses[mes].gasto.toFixed(2)}</td>
+    `;
+    tabela.appendChild(tr);
+  }
+}
 
