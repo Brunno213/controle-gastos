@@ -64,7 +64,7 @@
   <div class="container my-5" id="registrosSection" style="display:none;">
     <h2 class="text-center mb-4">Registros de Lançamentos</h2>
     <div class="table-responsive">
-      <table class="table table-striped">
+      <table class="table table-striped align-middle text-center">
         <thead class="table-success">
           <tr>
             <th>Data</th>
@@ -72,6 +72,7 @@
             <th>Categoria</th>
             <th>Descrição</th>
             <th>Valor (R$)</th>
+            <th>Ações</th>
           </tr>
         </thead>
         <tbody id="tabelaLancamentos"></tbody>
@@ -82,18 +83,7 @@
   <!-- Controle -->
   <div class="container my-5" id="controleSection" style="display:none;">
     <h2 class="text-center mb-4">Controle Mensal</h2>
-    <div class="table-responsive">
-      <table class="table table-bordered">
-        <thead class="table-success">
-          <tr>
-            <th>Mês</th>
-            <th>Total de Renda</th>
-            <th>Total de Gastos</th>
-          </tr>
-        </thead>
-        <tbody id="tabelaControle"></tbody>
-      </table>
-    </div>
+    <div id="tabelaControle" class="table-responsive"></div>
   </div>
 
   <script type="module" src="script.js"></script>
