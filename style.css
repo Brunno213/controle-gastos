@@ -1,243 +1,308 @@
+
+/* ================= CONFIGURAÇÕES GERAIS ================= */
+
 :root {
-  --verde: #1b8a3c;
-  --vermelho: #e63946;
-  --fundo: #ffffff;
-  --texto: #333;
-  --card: #f8f8f8;
+  --verde: #198754;
+  --verde-escuro: #146c43;
+  --vermelho: #dc3545;
+  --azul: #0d6efd;
+
+  --fundo: #f8f9fa;
+  --texto: #333333;
+  --card: #ffffff;
+  --borda: #dee2e6;
+  --tabela: #f8f9fa;
+
+  --sombra: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 body.dark {
   --fundo: #121212;
   --texto: #f1f1f1;
   --card: #1f1f1f;
+  --borda: #444444;
+  --tabela: #292929;
 }
+
+/* ================= BODY ================= */
 
 body {
   font-family: 'Segoe UI', sans-serif;
-  background: var(--fundo);
-  color: var(--texto);
+  background-color: var(--fundo) !important;
+  color: var(--texto) !important;
   margin: 0;
-  transition: 0.3s;
+  transition: background-color 0.3s, color 0.3s;
 }
 
-header {
-  background: var(--verde);
-  color: white;
-  padding: 1rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-}
-
-nav button, #darkToggle {
-  background: white;
-  color: var(--verde);
-  border: none;
-  padding: 0.6rem 1rem;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: 0.3s;
-  margin: 0.2rem;
-}
-
-nav button:hover, #darkToggle:hover {
-  background: var(--verde);
-  color: white;
-}
-
-.section {
-  display: none;
-  padding: 2rem;
-}
-
-.section.active {
-  display: block;
-}
-
-.form-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-form {
-  width: 100%;
-  max-width: 500px;
-  background: var(--card);
-  padding: 1.5rem;
-  border-radius: 10px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-}
-
-.form-row {
-  margin-bottom: 1rem;
-  display: flex;
-  flex-direction: column;
-}
-
-input, select, button {
-  padding: 0.6rem;
-  border-radius: 5px;
-  border: 1px solid #ccc;
-}
-
-button[type="submit"] {
-  background: var(--verde);
-  color: white;
-  border: none;
-  cursor: pointer;
-}
-
-button[type="submit"]:hover {
-  background: #147430;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: var(--card);
-  margin-top: 1rem;
-}
-
-th, td {
-  border: 1px solid #ddd;
-  padding: 0.6rem;
-  text-align: center;
-}
-
-.editar, .excluir {
-  border: none;
-  border-radius: 5px;
-  padding: 0.4rem 0.7rem;
-  cursor: pointer;
-}
-
-.editar { background: #ffc107; color: #000; }
-.excluir { background: #e63946; color: white; }
-
-.cards {
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-.card {
-  flex: 1;
-  min-width: 200px;
-  background: var(--card);
-  border-radius: 8px;
-  text-align: center;
-  padding: 1rem;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-}
-
-.card.verde { border-left: 5px solid var(--verde); }
-.card.vermelho { border-left: 5px solid var(--vermelho); }
-.card.saldo { border-left: 5px solid #3b82f6; }
-
-.card span { display: block; margin-top: 0.5rem; font-weight: bold; }
-
-.grafico-container {
-  max-width: 800px;
-  height: 400px;
-  margin: 2rem auto;
-  background: var(--card);
-  border-radius: 10px;
-  padding: 1rem;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-}
-
-body.dark {
-  background-color: #121212;
-  color: #f1f1f1;
-}
-
-body.dark header {
-  background-color: #0f5132;
-}
-
-body.dark .card {
-  background-color: #1f1f1f;
-  color: #f1f1f1;
-}
-
-.section {
-  display: none;
-}
-
-.section.active {
-  display: block;
-}
-
-body.dark {
-  background-color: #121212;
-  color: #f1f1f1;
-}
-
-body.dark header {
-  background-color: #0f5132;
-}
-
-body.dark .card {
-  background-color: #1f1f1f;
-  color: #f1f1f1;
-}
-
-.section {
-  display: none;
-}
-
-.section.active {
-  display: block;
-}
-
-body.dark {
-  background-color: #121212;
-  color: #f1f1f1;
-}
-
-body.dark header {
-  background-color: #0f5132;
-}
-
-body.dark .table {
-  color: #f1f1f1;
-}
-
-.section {
-  display: none;
-}
-
-.section.active {
-  display: block;
-}
-
-.progress {
-  height: 1rem;
-}
-body {
-  font-family: 'Segoe UI', sans-serif;
-  background-color: #ffffff;
-  color: #333;
-}
+/* ================= MENU ================= */
 
 .navbar {
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  background-color: var(--verde) !important;
+  box-shadow: var(--sombra);
+}
+
+.navbar-brand {
+  font-size: 1.2rem;
+}
+
+.navbar .nav-link {
+  color: rgba(255, 255, 255, 0.85);
+  transition: 0.3s;
+}
+
+.navbar .nav-link:hover {
+  color: #ffffff;
+}
+
+.navbar .nav-link.active {
+  color: #ffffff !important;
+  font-weight: bold;
+  border-bottom: 2px solid white;
+}
+
+/* ================= TÍTULOS ================= */
+
+h2, h4, h5, h6 {
+  color: var(--texto);
+}
+
+/* ================= FORMULÁRIOS ================= */
+
+form {
+  background-color: var(--card) !important;
+  color: var(--texto);
+  border: 1px solid var(--borda);
 }
 
 form label {
   font-weight: 600;
+  color: var(--texto);
 }
 
-table {
-  background-color: #fff;
+.form-control,
+.form-select {
+  background-color: var(--card);
+  color: var(--texto);
+  border: 1px solid var(--borda);
+}
+
+.form-control:focus,
+.form-select:focus {
+  background-color: var(--card);
+  color: var(--texto);
+  border-color: var(--verde);
+  box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.15);
+}
+
+.form-control::placeholder {
+  color: #888888;
+}
+
+/* ================= BOTÕES ================= */
+
+.btn-success {
+  background-color: var(--verde);
+  border-color: var(--verde);
+}
+
+.btn-success:hover {
+  background-color: var(--verde-escuro);
+  border-color: var(--verde-escuro);
+}
+
+.btn-warning {
+  color: #000000;
+}
+
+/* ================= CARDS ================= */
+
+.card {
+  background-color: var(--card) !important;
+  color: var(--texto) !important;
+  border: 1px solid var(--borda);
   border-radius: 10px;
-  overflow: hidden;
+  box-shadow: var(--sombra);
+}
+
+.card-body {
+  color: var(--texto);
+}
+
+.card h4,
+.card h5,
+.card h6 {
+  color: var(--texto);
+}
+
+/* ================= TABELAS ================= */
+
+.table {
+  background-color: var(--card);
+  color: var(--texto);
+  border-color: var(--borda);
+  vertical-align: middle;
 }
 
 .table th {
-  background-color: #198754;
-  color: white;
+  background-color: var(--verde) !important;
+  color: #ffffff !important;
+  white-space: nowrap;
 }
 
+.table td {
+  color: var(--texto);
+  background-color: var(--card);
+}
+
+.table-striped > tbody > tr:nth-of-type(odd) > * {
+  background-color: var(--tabela);
+  color: var(--texto);
+}
+
+.table-hover > tbody > tr:hover > * {
+  background-color: rgba(25, 135, 84, 0.08);
+  color: var(--texto);
+}
+
+/* ================= GRÁFICOS ================= */
+
+#graficoMensal {
+  width: 100%;
+}
+
+canvas {
+  max-width: 100%;
+}
+
+/* ================= FILTROS ================= */
+
+#filtroAnoControle,
+#filtroMesControle,
+#filtroMes,
+#pesquisaDescricao {
+  min-width: 150px;
+}
+
+#resultadoControle {
+  animation: aparecer 0.3s ease;
+}
+
+/* ================= TOAST ================= */
+
+.toast {
+  border-radius: 8px;
+  box-shadow: var(--sombra);
+}
+
+/* ================= MODO ESCURO ================= */
+
+body.dark .navbar {
+  background-color: #0f5132 !important;
+}
+
+body.dark .form-control,
+body.dark .form-select {
+  background-color: #292929;
+  color: #f1f1f1;
+  border-color: #555555;
+}
+
+body.dark .form-control:focus,
+body.dark .form-select:focus {
+  background-color: #292929;
+  color: #ffffff;
+}
+
+body.dark .form-select option {
+  background-color: #292929;
+  color: #ffffff;
+}
+
+body.dark .text-muted {
+  color: #bdbdbd !important;
+}
+
+body.dark .table {
+  --bs-table-bg: #1f1f1f;
+  --bs-table-color: #f1f1f1;
+  --bs-table-border-color: #444444;
+}
+
+body.dark .table th {
+  background-color: #0f5132 !important;
+}
+
+body.dark .table td {
+  background-color: #1f1f1f;
+  color: #f1f1f1;
+}
+
+body.dark .table-striped > tbody > tr:nth-of-type(odd) > * {
+  background-color: #292929;
+  color: #f1f1f1;
+}
+
+body.dark .table-hover > tbody > tr:hover > * {
+  background-color: #333333;
+  color: #ffffff;
+}
+
+body.dark .btn-close {
+  filter: invert(1);
+}
+
+/* ================= ANIMAÇÕES ================= */
+
+@keyframes aparecer {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ================= RESPONSIVIDADE ================= */
+
+@media (max-width: 768px) {
+
+  .navbar .container {
+    flex-wrap: wrap;
+  }
+
+  .navbar-nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin-top: 10px;
+  }
+
+  .navbar .nav-link {
+    padding: 8px;
+    font-size: 14px;
+  }
+
+  .container {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+  }
+
+  .card {
+    margin-bottom: 10px;
+  }
+
+  .table {
+    font-size: 13px;
+  }
+
+  .grafico-container {
+    height: 300px;
+  }
+
+}
